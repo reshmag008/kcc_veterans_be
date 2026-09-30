@@ -60,6 +60,34 @@ async function teamComplete(teamData){
     })
 }
 
+async function emitCurrentBid(teamData){
+    return new Promise(async (resolve, reject) => {
+        try {
+            global.io.to(roomId).emit('current_bid', JSON.stringify(teamData))
+            resolve('success')
+        }catch(e){
+            console.log("error occured in displayPlayer= ", e);
+            reject(e);
+        }
+    })
+}
+
+
+async function emitCallStage(state){
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log("state== ", state)
+            global.io.to(roomId).emit('call_stage', JSON.stringify(state))
+            resolve('success')
+        }catch(e){
+            console.log("error occured in displayPlayer= ", e);
+            reject(e);
+        }
+    })
+}
+
+
+
 async function closePopup(){
     return new Promise(async (resolve, reject) => {
         try {
@@ -175,19 +203,21 @@ async function getNonBidPlayers(id) {
             let players =[];
 
             if(id){
-                players = await models.players.findAll({
+                players = await models.players.findOne({
                     where: {
                       bid_amount: 0,
                       id : id,
                       un_sold : false
-                    }
+                    },
+                    order: models.sequelize.random()
                   });
             }else{
-                players = await models.players.findAll({
+                players = await models.players.findOne({
                     where: {
                       bid_amount: 0,
                       un_sold : false
-                    }
+                    },
+                    order: models.sequelize.random()
                   });
             }
             // let promiseArray =[];
@@ -247,11 +277,11 @@ async function updatePlayers(player){
                 }
                 updateTeam = await teamService.updateTeam(updateTeamParam)
             }
-            if(player.un_sold){
-                global.io.to(roomId).emit('player_unsold', JSON.stringify(player))
-            }else{
-                global.io.to(roomId).emit('player_sold', JSON.stringify(player))
-            }
+            // if(player.un_sold){
+            //     global.io.to(roomId).emit('player_unsold', JSON.stringify(player))
+            // }else{
+            //     global.io.to(roomId).emit('player_sold', JSON.stringify(player))
+            // }
             
             resolve(updateTeam)
         }catch(e){
@@ -316,11 +346,25 @@ async function displayTeamScores(){
     })
 }
 
+async function getCurrentPlayer() {
+    return new Promise(async (resolve, reject) => {
+        try {
+           const selectedPlayer = await models.players.findOne({
+                 where: { profile_link: "1" },
+                 order: [["updatedAt", "DESC"]],
+               });
+            resolve(selectedPlayer)
+        }catch(e){
+            reject(e)
+        }
+    })
+}
 
 
 
 
 module.exports = {
+    getCurrentPlayer:getCurrentPlayer,
     getPlayers : getPlayers,
     addPlayers : addPlayers,
     updatePlayers : updatePlayers,
@@ -333,5 +377,7 @@ module.exports = {
     closePopup:closePopup,
     displayTeamScores :displayTeamScores,
     updatePaymentScreenshot : updatePaymentScreenshot,
-    approvePlayers:approvePlayers
+    approvePlayers:approvePlayers,
+    emitCurrentBid:emitCurrentBid,
+    emitCallStage:emitCallStage
 };

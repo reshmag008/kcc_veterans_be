@@ -14,13 +14,12 @@ class ConfigConnection {
       operatorsAliases: true,
       freezeTableName: true,
     //   logging: true,
-    //   pool: {
-    //     max: 1,
-    //     min: 0,
-    //     acquire: 30000,
-    //     idle: 10000,
-    //     handleDisconnects: true
-    //   }
+        pool: {
+        max: 10,
+        min: 2,
+        acquire: 30000,
+        idle: 10000
+    }
     })
     this.sequelize
       .authenticate()

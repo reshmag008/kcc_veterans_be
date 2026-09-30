@@ -3,6 +3,8 @@ const { Op,Sequelize } = require("sequelize");
 const AWS = require('aws-sdk');
 const playerService = require('./player')
 const s3Service = require('./s3Service');
+const {roomId} = require('../config/constants');
+
 
 
 
@@ -82,11 +84,111 @@ async function getTeamNames() {
 
 }
 
+async function getTeamAuthenticated(code) {
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            let teams = await models.teams.findOne({where : {auction_code : code} });
+            resolve(teams);
+        }catch(e){
+            console.log("error occured in getTeams= ", e);
+            reject(e);
+        }
+    })
+
+}
+
+
+async function addBidHistory(bid){
+    return new Promise(async (resolve, reject) => {
+        try {
+            let addedBid = await models.bid_history.create(bid);
+            resolve(addedBid)
+        }catch(e){
+            console.log("error occured in addBidHistory= ", e);
+            reject(e);
+        }
+    })
+}
+
+
+async function getBidHistory(playerId) {
+
+    return new Promise(async (resolve, reject) => {
+        try {
+            let teams = await models.bid_history.findAll({where : {player_id : playerId} ,order: [["updatedAt", "DESC"]],});
+            resolve(teams);
+        }catch(e){
+            console.log("error occured in getBidHistory= ", e);
+            reject(e);
+        }
+    })
+
+}
+
+async function addAuctionState(auctionState){
+    return new Promise(async (resolve, reject) => {
+        try {
+            let addedBid = await models.auction_state.create(auctionState);
+            resolve(addedBid)
+        }catch(e){
+            console.log("error occured in addBidHistory= ", e);
+            reject(e);
+        }
+    })
+}
+
+async function getAuctionState(playerId) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let teams = await models.auction_state.findAll({where : {playerId : playerId}});
+            resolve(teams);
+        }catch(e){
+            console.log("error occured in getAuctionState= ", e);
+            reject(e);
+        }
+    })
+}
+
+async function getAuctionStateByRoom(roomId) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let teams = await models.auction_state.findOne({where : {roomId : roomId} ,order: [["updatedAt", "DESC"]] });
+            resolve(teams);
+        }catch(e){
+            console.log("error occured in getAuctionState= ", e);
+            reject(e);
+        }
+    })
+}
+
+
+async function updateAuctionState(params) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let auctionState = await models.auction_state.findOne({where:{playerId : params.playerId}});
+            auctionState.set(params);
+            await auctionState.save();
+            resolve(auctionState)
+        }catch(e){
+            console.log("error occured in updateAuctionState= ", e);
+            reject(e);
+        }
+    })
+}
+
 
 
 module.exports = {
     getTeams : getTeams,
     addTeams : addTeams,
     getTeamNames:getTeamNames,
-    updateTeam :  updateTeam
+    updateTeam :  updateTeam,
+    getTeamAuthenticated:getTeamAuthenticated,
+    addBidHistory:addBidHistory,
+    getBidHistory:getBidHistory,
+    addAuctionState:addAuctionState,
+    getAuctionState:getAuctionState,
+    updateAuctionState:updateAuctionState,
+    getAuctionStateByRoom:getAuctionStateByRoom
 }

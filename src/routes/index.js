@@ -6,6 +6,9 @@ const bodyParser = require('body-parser');
 const s3Service = require('../services/s3Service');
 const router = express.Router();
 const path = require('path');
+const whatsappRouter = require("./whatsapp");
+
+router.use("/webhook/whatsapp", whatsappRouter);
 // const googleApisService = require('../services/googleApis')
 
 const multer = require("multer");
@@ -236,6 +239,25 @@ router.get('/teamNames', (req, res) => {
 
 router.get('/update_unsold', (req, res) => {
     playerService.updateUnSold()
+        .then((result) => res.status(200).json(result))
+        .catch((err) => res.status(500).json(err))
+});
+
+router.get('/autheticateTeam/:code', (req, res) => {
+    teamService.getTeamAuthenticated(req.params.code)
+        .then((result) => res.status(200).json(result))
+        .catch((err) => res.status(500).json(err))
+});
+
+router.post('/add_bid_history', bodyParser.json(), (req, res) => {
+    console.log(req.body)
+    teamService.addBidHistory(req.body)
+        .then((result) => res.status(200).json(result))
+        .catch((err) => res.status(500).json(err))
+});
+
+router.get('/get_bid_history/:playerId', (req, res) => {
+    teamService.getBidHistory(req.params.playerId)
         .then((result) => res.status(200).json(result))
         .catch((err) => res.status(500).json(err))
 });
