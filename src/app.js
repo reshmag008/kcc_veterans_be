@@ -27,7 +27,7 @@ const ROOM_ID = "kcc_auction_room";
 const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:8081",
-  "https://kizhakenni-pl-fe-204746249106.europe-west1.run.app",
+  "https://kcc-veterans-be-204746249106.europe-west1.run.app",
 ];
 
 app.use(
@@ -477,6 +477,30 @@ async function finalizeAuction(roomId, playerId,teamId,bidAmount) {
   });
  
 }
+
+
+// const { Server } = require("socket.io");
+
+// const io = new Server(server, {
+//   cors: {
+//     origin: allowedOrigins,
+//     methods: ["GET", "POST"],
+//     credentials: true,
+//   },
+//   transports: ["polling", "websocket"],
+// });
+
+// global.io = io;
+
+// io.on("connection", (socket) => {
+//   console.log("Connected:", socket.id);
+
+//   socket.on("join-room", async (roomId) => {
+//     socket.join(roomId);
+
+    
+//   });
+// });
 
 
 
