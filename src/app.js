@@ -85,19 +85,19 @@ const io = new Server(server, {
    REDIS
 ========================= */
 
-const pubClient = createClient({
-  url: process.env.REDIS_URL,
-});
+// const pubClient = createClient({
+//   url: process.env.REDIS_URL,
+// });
 
-const subClient = pubClient.duplicate();
+// const subClient = pubClient.duplicate();
 
-pubClient.on("error", (error) => {
-  console.error("Redis Pub Client Error:", error);
-});
+// pubClient.on("error", (error) => {
+//   console.error("Redis Pub Client Error:", error);
+// });
 
-subClient.on("error", (error) => {
-  console.error("Redis Sub Client Error:", error);
-});
+// subClient.on("error", (error) => {
+//   console.error("Redis Sub Client Error:", error);
+// });
 
 /* =========================
    SOCKET EVENTS
@@ -478,86 +478,58 @@ async function finalizeAuction(roomId, playerId,teamId,bidAmount) {
  
 }
 
+// async function startServer() {
+//   try {
+//     server.listen(PORT, "0.0.0.0", async () => {
+//       console.log(`Server running on port ${PORT}`);
+//       console.log(`Socket.IO enabled`);
+//       console.log(`Auction room: ${ROOM_ID}`);
 
-// const { Server } = require("socket.io");
+//       try {
+//         await Promise.all([
+//           pubClient.connect(),
+//           subClient.connect(),
+//         ]);
 
-// const io = new Server(server, {
-//   cors: {
-//     origin: allowedOrigins,
-//     methods: ["GET", "POST"],
-//     credentials: true,
-//   },
-//   transports: ["polling", "websocket"],
-// });
+//         io.adapter(createAdapter(pubClient, subClient));
 
-// global.io = io;
+//         console.log("Redis connected");
+//         console.log("Socket.IO Redis adapter enabled");
 
-// io.on("connection", (socket) => {
-//   console.log("Connected:", socket.id);
+//       } catch (redisError) {
+//         console.error("Redis connection failed:", redisError);
+//       }
+//     });
 
-//   socket.on("join-room", async (roomId) => {
-//     socket.join(roomId);
+//   } catch (error) {
+//     console.error("Failed to start server:", error);
+//     process.exit(1);
+//   }
+// }
 
-    
-//   });
-// });
+// /* =========================
+//    GRACEFUL SHUTDOWN
+// ========================= */
 
+// async function shutdown(signal) {
+//   console.log(`${signal} received. Shutting down...`);
 
+//   try {
+//     await pubClient.quit();
+//     await subClient.quit();
 
+//     server.close(() => {
+//       console.log("Server closed");
+//       process.exit(0);
+//     });
+//   } catch (error) {
+//     console.error("Shutdown error:", error);
+//     process.exit(1);
+//   }
+// }
 
-
-async function startServer() {
-  try {
-    server.listen(PORT, "0.0.0.0", async () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Socket.IO enabled`);
-      console.log(`Auction room: ${ROOM_ID}`);
-
-      try {
-        await Promise.all([
-          pubClient.connect(),
-          subClient.connect(),
-        ]);
-
-        io.adapter(createAdapter(pubClient, subClient));
-
-        console.log("Redis connected");
-        console.log("Socket.IO Redis adapter enabled");
-
-      } catch (redisError) {
-        console.error("Redis connection failed:", redisError);
-      }
-    });
-
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-}
-
-/* =========================
-   GRACEFUL SHUTDOWN
-========================= */
-
-async function shutdown(signal) {
-  console.log(`${signal} received. Shutting down...`);
-
-  try {
-    await pubClient.quit();
-    await subClient.quit();
-
-    server.close(() => {
-      console.log("Server closed");
-      process.exit(0);
-    });
-  } catch (error) {
-    console.error("Shutdown error:", error);
-    process.exit(1);
-  }
-}
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+// process.on("SIGTERM", () => shutdown("SIGTERM"));
+// process.on("SIGINT", () => shutdown("SIGINT"));
 
 /* =========================
    EXPORTS
@@ -569,10 +541,4 @@ module.exports = {
   io,
   ROOM_ID,
 };
-
-/* =========================
-   START
-========================= */
-
-startServer();
 
