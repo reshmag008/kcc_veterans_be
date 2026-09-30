@@ -484,18 +484,27 @@ async function finalizeAuction(roomId, playerId,teamId,bidAmount) {
 
 async function startServer() {
   try {
-    await Promise.all([
-      pubClient.connect(),
-      subClient.connect(),
-    ]);
-
-    io.adapter(createAdapter(pubClient, subClient));
-
-    server.listen(PORT, () => {
+    server.listen(PORT, "0.0.0.0", async () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Socket.IO enabled`);
       console.log(`Auction room: ${ROOM_ID}`);
+
+      try {
+        await Promise.all([
+          pubClient.connect(),
+          subClient.connect(),
+        ]);
+
+        io.adapter(createAdapter(pubClient, subClient));
+
+        console.log("Redis connected");
+        console.log("Socket.IO Redis adapter enabled");
+
+      } catch (redisError) {
+        console.error("Redis connection failed:", redisError);
+      }
     });
+
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);
