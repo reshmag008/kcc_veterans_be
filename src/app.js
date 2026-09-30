@@ -27,7 +27,7 @@ const ROOM_ID = "kcc_auction_room";
 const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:8081",
-  "https://kcc-veterans-be-204746249106.europe-west1.run.app",
+  "https://kcc-veterens-fe-204746249106.europe-west1.run.app",
 ];
 
 app.use(
