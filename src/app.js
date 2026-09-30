@@ -1,75 +1,69 @@
-
 const http = require("http");
 const express = require("express");
 const cors = require("cors");
-const { Server } = require("socket.io");
-const { createAdapter } = require("@socket.io/redis-adapter");
-const { createClient } = require("redis");
-
+const bodyParser = require("body-parser");
 const routes = require("./routes");
+const models = require("./models");
+const path = require('path');
+
 const teams = require("./services/teams");
 const player = require("./services/player");
+
 require("./config/db_connection");
 
 const auctionTimers = new Map();
 const auctionRemaining = new Map();
 
-const app = express();
-const server = http.createServer(app);
-
-const PORT = process.env.PORT || 8080;
 const ROOM_ID = "kcc_auction_room";
 
-/* =========================
-   CORS
-========================= */
+const app = express();
+
+/* =======================
+   CORS (SINGLE SOURCE)
+   ======================= */
+const ALLOWED_ORIGINS =
+  "*";
 
 const allowedOrigins = [
-  "http://localhost:8080",
-  "http://localhost:8081",
-  "https://kcc-veterens-fe-204746249106.europe-west1.run.app",
+  "http://localhost:8080","http://localhost:8081","https://kizhakenni-pl-fe-204746249106.europe-west1.run.app/"
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: "*",
     methods: ["GET", "POST", "PUT"],
     credentials: true,
   })
 );
 
-/* =========================
+app.use(express.static('public'))
+
+/* =======================
    MIDDLEWARE
-========================= */
-
+   ======================= */
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-/* =========================
-   STATIC FILES
-========================= */
-
-app.use(express.static("public"));
-
-/* =========================
-   ROUTES
-========================= */
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(routes);
-
-/* =========================
-   HEALTH CHECK
-========================= */
-
-app.get("/", (req, res) => {
-  res.status(200).send("Server is up");
-});
-
 app.disable("x-powered-by");
 
-/* =========================
+/* =======================
+   HEALTH CHECK
+   ======================= */
+app.get("/", (req, res) => {
+  res.send("Server is up");
+});
+
+/* =======================
+   HTTP SERVER (IMPORTANT)
+   ======================= */
+const server = http.createServer(app);
+
+/* =======================
    SOCKET.IO
-========================= */
+   ======================= */
+const { Server } = require("socket.io");
 
 const io = new Server(server, {
   cors: {
@@ -77,31 +71,10 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
-
-  transports: ["websocket", "polling"],
+  transports: ["polling", "websocket"],
 });
 
-/* =========================
-   REDIS
-========================= */
-
-// const pubClient = createClient({
-//   url: process.env.REDIS_URL,
-// });
-
-// const subClient = pubClient.duplicate();
-
-// pubClient.on("error", (error) => {
-//   console.error("Redis Pub Client Error:", error);
-// });
-
-// subClient.on("error", (error) => {
-//   console.error("Redis Sub Client Error:", error);
-// });
-
-/* =========================
-   SOCKET EVENTS
-========================= */
+global.io = io;
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id);
@@ -478,67 +451,141 @@ async function finalizeAuction(roomId, playerId,teamId,bidAmount) {
  
 }
 
-// async function startServer() {
-//   try {
-//     server.listen(PORT, "0.0.0.0", async () => {
-//       console.log(`Server running on port ${PORT}`);
-//       console.log(`Socket.IO enabled`);
-//       console.log(`Auction room: ${ROOM_ID}`);
 
-//       try {
-//         await Promise.all([
-//           pubClient.connect(),
-//           subClient.connect(),
-//         ]);
 
-//         io.adapter(createAdapter(pubClient, subClient));
+/* =======================
+   START SERVER
+   ======================= */
+const PORT = process.env.PORT || 8080;
 
-//         console.log("Redis connected");
-//         console.log("Socket.IO Redis adapter enabled");
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
-//       } catch (redisError) {
-//         console.error("Redis connection failed:", redisError);
-//       }
-//     });
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "my_verify_token";
 
-//   } catch (error) {
-//     console.error("Failed to start server:", error);
-//     process.exit(1);
-//   }
-// }
+app.get("/webhook/whatsapp", (req, res) => {
+  console.log("req== ", req.query);
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-// /* =========================
-//    GRACEFUL SHUTDOWN
-// ========================= */
+  console.log("WhatsApp webhook verification request");
+  console.log("VERIFY_TOKEN== ", VERIFY_TOKEN)
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("WhatsApp webhook verified successfully");
 
-// async function shutdown(signal) {
-//   console.log(`${signal} received. Shutting down...`);
+    return res.status(200).send(challenge);
+  }
 
-//   try {
-//     await pubClient.quit();
-//     await subClient.quit();
+  console.log("WhatsApp webhook verification failed");
 
-//     server.close(() => {
-//       console.log("Server closed");
-//       process.exit(0);
-//     });
-//   } catch (error) {
-//     console.error("Shutdown error:", error);
-//     process.exit(1);
-//   }
-// }
+  return res.sendStatus(403);
+});
 
-// process.on("SIGTERM", () => shutdown("SIGTERM"));
-// process.on("SIGINT", () => shutdown("SIGINT"));
 
-/* =========================
-   EXPORTS
-========================= */
+app.post("/webhook/whatsapp", (req, res) => {
+  try {
+    console.log(
+      "WhatsApp webhook received:",
+      JSON.stringify(req.body, null, 2)
+    );
 
-module.exports = {
-  app,
-  server,
-  io,
-  ROOM_ID,
-};
+    const body = req.body;
 
+    if (body.object !== "whatsapp_business_account") {
+      return res.sendStatus(404);
+    }
+
+    const entries = body.entry || [];
+
+    entries.forEach((entry) => {
+      const changes = entry.changes || [];
+
+      changes.forEach((change) => {
+        const value = change.value;
+
+        // Message status updates
+        const statuses = value?.statuses || [];
+
+        statuses.forEach((status) => {
+          console.log("=================================");
+          console.log("WhatsApp Message Status");
+          console.log("Message ID:", status.id);
+          console.log("Status:", status.status);
+          console.log("Recipient:", status.recipient_id);
+          console.log("Timestamp:", status.timestamp);
+
+          if (status.errors) {
+            console.log(
+              "Errors:",
+              JSON.stringify(status.errors, null, 2)
+            );
+          }
+
+          console.log("=================================");
+
+          switch (status.status) {
+            case "sent":
+              console.log("Message sent to WhatsApp");
+              break;
+
+            case "delivered":
+              console.log("Message delivered to recipient");
+              break;
+
+            case "read":
+              console.log("Message read by recipient");
+              break;
+
+            case "failed":
+              console.log("Message delivery failed");
+
+              if (status.errors) {
+                status.errors.forEach((error) => {
+                  console.log("Error code:", error.code);
+                  console.log("Error title:", error.title);
+                  console.log("Error message:", error.message);
+                });
+              }
+
+              break;
+
+            default:
+              console.log("Unknown status:", status.status);
+          }
+        });
+
+        // Incoming WhatsApp messages
+        const messages = value?.messages || [];
+
+        messages.forEach((message) => {
+          console.log("Incoming WhatsApp message");
+
+          console.log("Message ID:", message.id);
+          console.log("From:", message.from);
+          console.log("Type:", message.type);
+
+          if (message.text) {
+            console.log("Text:", message.text.body);
+          }
+        });
+      });
+    });
+
+    // IMPORTANT:
+    // Respond quickly to WhatsApp
+    return res.sendStatus(200);
+
+  } catch (error) {
+    console.error("WhatsApp webhook error:", error);
+
+    return res.sendStatus(500);
+  }
+});
+
+
+
+
+
+module.exports = { app, server, io };

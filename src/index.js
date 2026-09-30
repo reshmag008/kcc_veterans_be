@@ -1,5 +1,5 @@
 const { app,server } = require('./app');
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 443;
 
 // const socketConnection = require('./config/socketConnection');
 
@@ -12,9 +12,9 @@ const port = process.env.PORT || 8080;
 
 const startServer = async () => {
 
-//  app.listen(port, "0.0.0.0", () => {
-//   console.log(`Server running on port ${port}`);
-// });
+  // const server = app.listen(8443, () => {
+  //     console.log(`Server is running on port ${8443}`);
+  //   });
 
 };
 
