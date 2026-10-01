@@ -201,6 +201,22 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("team_call", data);
   });
 
+  socket.on("player_sold", (data) => {
+
+    console.log("player_sold---")
+    const roomId = data?.roomId || ROOM_ID;
+
+    io.to(roomId).emit("player_sold", data);
+  });
+
+  socket.on("player_unsold", (data) => {
+
+    console.log("player_unsold---")
+    const roomId = data?.roomId || ROOM_ID;
+
+    io.to(roomId).emit("player_unsold", data);
+  });
+
   
 
 
