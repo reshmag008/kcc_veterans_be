@@ -193,6 +193,16 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("auction-call", data);
   });
 
+  socket.on("team_call", (data) => {
+
+    console.log("team_call---")
+    const roomId = data?.roomId || ROOM_ID;
+
+    io.to(roomId).emit("team_call", data);
+  });
+
+  
+
 
   socket.on("get-auction-state", async ({ roomId }) => {
 
