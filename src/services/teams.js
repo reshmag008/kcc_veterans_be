@@ -54,7 +54,7 @@ async function updateTeam(team){
             let updateParam = {
                 total_points : addedTeam.total_points - team.bid_amount,
                 player_count : addedTeam.player_count + 1,
-                max_bid_amount : (addedTeam.total_points - team.bid_amount) - (  (10 - (addedTeam.player_count+1) ) * 1000 ) 
+                max_bid_amount : (addedTeam.total_points - team.bid_amount) - (  (10 - (addedTeam.player_count+1) ) * 500 ) 
             }
             addedTeam.set(updateParam);
             await addedTeam.save();
